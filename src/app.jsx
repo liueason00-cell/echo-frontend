@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Image as ImageIcon, Sparkles, User, Zap, LayoutDashboard, Target, Plus, LogOut, BrainCircuit, ChevronRight, Menu, X, Trash2, Palette, UploadCloud, Globe, MapPin, AlertTriangle } from 'lucide-react';
+import { Send, Image as ImageIcon, Sparkles, User, Zap, LayoutDashboard, Target, Plus, LogOut, BrainCircuit, ChevronRight, Menu, X, Trash2, Palette, UploadCloud, Globe, MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import LegalFooter from './LegalText'; 
@@ -132,7 +132,7 @@ const LoginScreen = ({ onLogin, initialLang = 'cn' }) => {
   const [activeTab, setActiveTab] = useState('china'); 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [lang, setLang] = useState(initialLang); // 登录页独立语言状态
+  const [lang, setLang] = useState(initialLang); 
   const t = TRANSLATIONS[lang];
 
   // Firebase 状态
@@ -164,6 +164,7 @@ const LoginScreen = ({ onLogin, initialLang = 'cn' }) => {
     e.preventDefault();
     setLoading(true); setError(null);
 
+    // ✅ URL 已修正为你的 Render 后端
     const API_URL = "https://echo-api-6d3i.onrender.com/api/auth"; 
     const endpoint = isCnRegister ? `${API_URL}/register` : `${API_URL}/login`;
 
@@ -183,7 +184,7 @@ const LoginScreen = ({ onLogin, initialLang = 'cn' }) => {
         email: null,
         photoURL: null,
         isCustomAuth: true,
-        preferredLang: lang // 传递用户选择的语言偏好
+        preferredLang: lang 
       });
 
     } catch (err) {
@@ -194,7 +195,6 @@ const LoginScreen = ({ onLogin, initialLang = 'cn' }) => {
 
   return (
     <div className="h-screen bg-[#F8FAFC] flex flex-col items-center justify-center relative overflow-hidden">
-      {/* 语言切换 (右上角) */}
       <div className="absolute top-6 right-6 z-20">
          <button 
            onClick={() => setLang(lang === 'cn' ? 'en' : 'cn')}
@@ -571,7 +571,7 @@ export default function EchoCoach() {
     if (!currentUser || !currentUser.uid) return;
 
     try {
-        const response = await fetch('https://echo-api-6d3i.onrender.com/api/auth/delete', {
+        const response = await fetch('[https://echo-api-6d3i.onrender.com/api/auth/delete](https://echo-api-6d3i.onrender.com/api/auth/delete)', {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ uid: currentUser.uid })
@@ -588,6 +588,7 @@ export default function EchoCoach() {
     } catch (e) {
         alert("Network error: " + e.message);
     }
+  };
 
   // --- 📡 发送消息 ---
   const handleSend = async () => {
@@ -605,7 +606,7 @@ export default function EchoCoach() {
     setInput(''); setImages([]); setIsThinking(true);
 
     try {
-      const response = await fetch('https://echo-api-6d3i.onrender.com/api/ask', {
+      const response = await fetch('[https://echo-api-6d3i.onrender.com/api/ask](https://echo-api-6d3i.onrender.com/api/ask)', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
