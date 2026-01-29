@@ -571,7 +571,7 @@ export default function EchoCoach() {
     if (!currentUser || !currentUser.uid) return;
 
     try {
-        const response = await fetch('[https://echo-api-6d3i.onrender.com/api/auth/delete](https://echo-api-6d3i.onrender.com/api/auth/delete)', {
+        const response = await fetch('https://echo-api-6d3i.onrender.com/api/auth/delete', {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ uid: currentUser.uid })
@@ -606,7 +606,7 @@ export default function EchoCoach() {
     setInput(''); setImages([]); setIsThinking(true);
 
     try {
-      const response = await fetch('[https://echo-api-6d3i.onrender.com/api/ask](https://echo-api-6d3i.onrender.com/api/ask)', {
+      const response = await fetch('https://echo-api-6d3i.onrender.com/api/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
