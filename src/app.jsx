@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Image as ImageIcon, Sparkles, User, Zap, LayoutDashboard, Target, Plus, LogOut, BrainCircuit, ChevronRight, Menu, X, Trash2, Palette, UploadCloud, Globe, MapPin } from 'lucide-react';
+import { Send, Image as ImageIcon, Sparkles, User, Zap, LayoutDashboard, Target, Plus, LogOut, BrainCircuit, ChevronRight, Menu, X, Trash2, Palette, UploadCloud, Globe, MapPin, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import LegalFooter from './LegalText'; 
@@ -9,7 +9,61 @@ import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPass
 import { auth, googleProvider } from './firebaseConfig';
 
 // ==============================================================================
-// 1. 🎨 配色方案 (保持原样)
+// 0. 🌍 国际化字典 (Translation Dictionary)
+// ==============================================================================
+const TRANSLATIONS = {
+  cn: {
+    appName: "回声 ECHO",
+    slogan: "你的 AI 沟通军师",
+    loginModeCn: "中国直连 (免VPN)",
+    loginModeGlobal: "全球模式 (Google)",
+    username: "账号 ID",
+    password: "密码",
+    loginBtn: "登录",
+    registerBtn: "注册并登录",
+    googleLogin: "Google 账号登录",
+    switchRegister: "没有账号？去注册",
+    switchLogin: "已有账号？去登录",
+    thinking: "正在思考...",
+    systemReady: "系统就绪",
+    newSession: "新对话",
+    archives: "历史记录",
+    theme: "主题配色",
+    logout: "退出登录",
+    deleteAccount: "注销账号",
+    deleteConfirm: "⚠️ 高危操作：确定要永久删除账号吗？此操作无法撤销，所有历史记录将丢失。",
+    inputPlaceholder: "输入你的困惑，或者上传聊天截图...",
+    modes: { quick: "嘴替模式", master: "军师模式", report: "深度复盘" },
+    aiTitles: { quick: "神回复推荐", analysis: "局势分析", strategy: "战术建议", next: "下一步行动" }
+  },
+  en: {
+    appName: "ECHO",
+    slogan: "Your AI Communication Coach",
+    loginModeCn: "Direct (China)",
+    loginModeGlobal: "Global (Google)",
+    username: "User ID",
+    password: "Password",
+    loginBtn: "Log In",
+    registerBtn: "Sign Up & Login",
+    googleLogin: "Continue with Google",
+    switchRegister: "New here? Create Account",
+    switchLogin: "Have an account? Log In",
+    thinking: "THINKING...",
+    systemReady: "SYSTEM READY",
+    newSession: "New Session",
+    archives: "ARCHIVES",
+    theme: "Theme",
+    logout: "Log Out",
+    deleteAccount: "Delete Account",
+    deleteConfirm: "⚠️ WARNING: Are you sure you want to permanently delete your account? All history will be lost.",
+    inputPlaceholder: "Type your situation here... (or drag & drop screenshots)",
+    modes: { quick: "Quick Reply", master: "Master Strategy", report: "Deep Report" },
+    aiTitles: { quick: "Quick Responses", analysis: "Situation Analysis", strategy: "Strategic Advice", next: "Next Moves" }
+  }
+};
+
+// ==============================================================================
+// 1. 🎨 配色方案
 // ==============================================================================
 const THEMES = {
   royal: { 
@@ -72,12 +126,14 @@ const THEMES = {
 };
 
 // ==============================================================================
-// 2. 🔐 登录组件 (双轨制：海外 vs 国内)
+// 2. 🔐 登录组件 (支持中英切换)
 // ==============================================================================
-const LoginScreen = ({ onLogin }) => {
-  const [activeTab, setActiveTab] = useState('china'); // 默认展示国内版
+const LoginScreen = ({ onLogin, initialLang = 'cn' }) => {
+  const [activeTab, setActiveTab] = useState('china'); 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [lang, setLang] = useState(initialLang); // 登录页独立语言状态
+  const t = TRANSLATIONS[lang];
 
   // Firebase 状态
   const [fbEmail, setFbEmail] = useState("");
@@ -89,14 +145,12 @@ const LoginScreen = ({ onLogin }) => {
   const [cnPass, setCnPass] = useState("");
   const [isCnRegister, setIsCnRegister] = useState(false);
 
-  // 1. Google 登录
   const handleGoogleLogin = async () => {
     setLoading(true); setError(null);
     try { await signInWithPopup(auth, googleProvider); } 
-    catch (err) { setError("Google连接失败 (需VPN)"); setLoading(false); }
+    catch (err) { setError("Google Connection Failed (VPN required)"); setLoading(false); }
   };
 
-  // 2. 邮箱登录 (Firebase)
   const handleEmailAuth = async (e) => {
     e.preventDefault();
     setLoading(true); setError(null);
@@ -106,12 +160,10 @@ const LoginScreen = ({ onLogin }) => {
     } catch (err) { setError(err.message); setLoading(false); }
   };
 
-  // 3. 🔥 中国特供：自定义账号登录 (连接 Render 后端)
   const handleCustomAuth = async (e) => {
     e.preventDefault();
     setLoading(true); setError(null);
 
-    // ⚠️ 替换为真实的 Render 后端地址
     const API_URL = "https://echo-api-6d3i.onrender.com/api/auth"; 
     const endpoint = isCnRegister ? `${API_URL}/register` : `${API_URL}/login`;
 
@@ -123,15 +175,15 @@ const LoginScreen = ({ onLogin }) => {
       });
       
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "请求失败");
+      if (!res.ok) throw new Error(data.error || "Request Failed");
 
-      // 伪造一个 User 对象传给 App
       onLogin({
         uid: data.uid,
         displayName: data.username,
         email: null,
         photoURL: null,
-        isCustomAuth: true // 标记为自定义登录
+        isCustomAuth: true,
+        preferredLang: lang // 传递用户选择的语言偏好
       });
 
     } catch (err) {
@@ -142,7 +194,16 @@ const LoginScreen = ({ onLogin }) => {
 
   return (
     <div className="h-screen bg-[#F8FAFC] flex flex-col items-center justify-center relative overflow-hidden">
-      {/* 背景特效 */}
+      {/* 语言切换 (右上角) */}
+      <div className="absolute top-6 right-6 z-20">
+         <button 
+           onClick={() => setLang(lang === 'cn' ? 'en' : 'cn')}
+           className="px-3 py-1 bg-white border border-slate-200 rounded-full text-xs font-bold text-slate-600 shadow-sm hover:text-blue-600 transition-colors"
+         >
+            {lang === 'cn' ? '🇺🇸 EN' : '🇨🇳 中文'}
+         </button>
+      </div>
+
       <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-[#3B82F6]/5 rounded-full blur-[100px]" />
       <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-[#E07A5F]/5 rounded-full blur-[100px]" />
       
@@ -152,35 +213,33 @@ const LoginScreen = ({ onLogin }) => {
         className="z-10 bg-white/80 backdrop-blur-xl border border-slate-200 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden"
       >
         <div className="text-center pt-8 pb-4">
-          <h1 className="text-3xl font-bold text-slate-800 font-serif tracking-tight">DECODR</h1>
-          <p className="text-slate-500 text-xs tracking-widest uppercase">Beta 1.0</p>
+          <h1 className="text-3xl font-bold text-slate-800 font-serif tracking-tight">{t.appName}</h1>
+          <p className="text-slate-500 text-xs tracking-widest uppercase mt-1">{t.slogan}</p>
         </div>
 
-        {/* Tab 切换 */}
         <div className="flex border-b border-slate-100 mx-6">
           <button 
             onClick={() => { setActiveTab('china'); setError(null); }}
             className={`flex-1 pb-2 text-xs font-bold flex items-center justify-center gap-1 ${activeTab === 'china' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-400'}`}
           >
-            <MapPin size={14}/> 中国直连 (免VPN)
+            <MapPin size={14}/> {t.loginModeCn}
           </button>
           <button 
             onClick={() => { setActiveTab('global'); setError(null); }}
             className={`flex-1 pb-2 text-xs font-bold flex items-center justify-center gap-1 ${activeTab === 'global' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-400'}`}
           >
-            <Globe size={14}/> Global (Google)
+            <Globe size={14}/> {t.loginModeGlobal}
           </button>
         </div>
 
         <div className="p-8 pt-6 min-h-[300px]">
-          {/* 🇨🇳 中国模式表单 */}
           {activeTab === 'china' && (
             <form onSubmit={handleCustomAuth} className="space-y-4 animate-in fade-in duration-300">
                <div>
-                 <label className="text-[10px] text-slate-400 uppercase font-bold pl-1">自定义账号</label>
+                 <label className="text-[10px] text-slate-400 uppercase font-bold pl-1">{t.username}</label>
                  <input 
                    type="text" 
-                   placeholder="输入你的 ID (如: eason001)" 
+                   placeholder="e.g. echo_user" 
                    value={cnUser}
                    onChange={(e) => setCnUser(e.target.value)}
                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-blue-500 outline-none"
@@ -188,10 +247,10 @@ const LoginScreen = ({ onLogin }) => {
                  />
                </div>
                <div>
-                 <label className="text-[10px] text-slate-400 uppercase font-bold pl-1">密码</label>
+                 <label className="text-[10px] text-slate-400 uppercase font-bold pl-1">{t.password}</label>
                  <input 
                    type="password" 
-                   placeholder="设置/输入密码" 
+                   placeholder="******" 
                    value={cnPass}
                    onChange={(e) => setCnPass(e.target.value)}
                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-blue-500 outline-none"
@@ -206,18 +265,17 @@ const LoginScreen = ({ onLogin }) => {
                  disabled={loading}
                  className="w-full py-3 bg-slate-900 text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
                >
-                 {loading ? "Connecting..." : (isCnRegister ? "立即注册并登录" : "登录")}
+                 {loading ? "Connecting..." : (isCnRegister ? t.registerBtn : t.loginBtn)}
                </button>
 
                <div className="text-center">
                  <button type="button" onClick={() => setIsCnRegister(!isCnRegister)} className="text-xs text-slate-500 underline hover:text-blue-600">
-                   {isCnRegister ? "已有账号？去登录" : "第一次来？创建新账号"}
+                   {isCnRegister ? t.switchLogin : t.switchRegister}
                  </button>
                </div>
             </form>
           )}
 
-          {/* 🌍 国际模式表单 */}
           {activeTab === 'global' && (
             <div className="space-y-4 animate-in fade-in duration-300">
               <button
@@ -225,7 +283,7 @@ const LoginScreen = ({ onLogin }) => {
                 className="w-full py-3 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold rounded-xl transition-all flex items-center justify-center gap-2"
               >
                 <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5" alt="G"/>
-                <span>Continue with Google</span>
+                <span>{t.googleLogin}</span>
               </button>
 
               <div className="relative my-4">
@@ -260,7 +318,6 @@ const LoginScreen = ({ onLogin }) => {
           )}
         </div>
 
-        {/* 协议组件 */}
         <div className="pb-6 border-t border-slate-50 bg-slate-50/50">
            <LegalFooter />
         </div>
@@ -271,9 +328,9 @@ const LoginScreen = ({ onLogin }) => {
 };
 
 // ==============================================================================
-// 3. 🧠 思考指示器 (保持原样)
+// 3. 🧠 思考指示器
 // ==============================================================================
-const ThinkingIndicator = ({ theme }) => (
+const ThinkingIndicator = ({ theme, text }) => (
   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex justify-start w-full">
     <div className={`${theme.aiBubble} rounded-2xl p-4 flex items-center gap-3 shadow-sm`}>
       <div className="relative flex items-center justify-center w-6 h-6">
@@ -284,26 +341,32 @@ const ThinkingIndicator = ({ theme }) => (
         />
         <BrainCircuit size={16} className={theme.accent} />
       </div>
-      <span className={`text-xs ${theme.accent} font-mono tracking-widest font-bold`}>THINKING...</span>
+      <span className={`text-xs ${theme.accent} font-mono tracking-widest font-bold`}>{text}</span>
     </div>
   </motion.div>
 );
 
 // ==============================================================================
-// 4. 🚀 智能消息渲染器 (保持原样)
+// 4. 🚀 智能消息渲染器 (包含翻译支持)
 // ==============================================================================
-const AIResponseRenderer = ({ content, theme }) => {
+const AIResponseRenderer = ({ content, theme, t }) => {
   if (!content) return null;
 
+  const cleanContent = content
+    .replace(/^```json\s*/, '')
+    .replace(/^```\s*/, '')
+    .replace(/```$/, '')
+    .trim();
+
   // 1️⃣ Quick Mode JSON
-  try {
-    if (content.trim().startsWith('{') && content.includes('"replies"')) {
-      const data = JSON.parse(content);
+  if (cleanContent.startsWith('{') && cleanContent.includes('"replies"')) {
+    try {
+      const data = JSON.parse(cleanContent);
       if (data.replies && Array.isArray(data.replies)) {
         return (
           <div className="space-y-3 w-full">
             <h4 className={`${theme.accent} text-xs font-bold tracking-wider mb-2 uppercase flex items-center gap-2`}>
-              <Zap size={14} /> Quick Responses
+              <Zap size={14} /> {t.aiTitles.quick}
             </h4>
             <div className="grid gap-3">
               {data.replies.map((reply, idx) => (
@@ -320,8 +383,10 @@ const AIResponseRenderer = ({ content, theme }) => {
           </div>
         );
       }
+    } catch (e) {
+      console.warn("JSON Parse Error:", e);
     }
-  } catch (e) {}
+  }
 
   // 2️⃣ Master Mode XML
   if (content.includes(':::')) {
@@ -340,7 +405,7 @@ const AIResponseRenderer = ({ content, theme }) => {
         {analysis && (
           <div className={`border-l-4 ${theme.borderHighlight} pl-4 py-1`}>
             <h4 className={`${theme.accent} text-xs font-bold tracking-wider mb-2 flex items-center gap-2 uppercase opacity-80`}>
-              <LayoutDashboard size={14} /> Situation Diagnosis
+              <LayoutDashboard size={14} /> {t.aiTitles.analysis}
             </h4>
             <div className={`${theme.textMain} text-sm leading-6 prose prose-slate max-w-none`}><ReactMarkdown>{analysis}</ReactMarkdown></div>
           </div>
@@ -349,7 +414,7 @@ const AIResponseRenderer = ({ content, theme }) => {
         {action && (
           <div className={`${theme.card} p-5 rounded-xl relative overflow-hidden`}>
             <h4 className={`${theme.textMain} text-xs font-bold tracking-wider mb-3 flex items-center gap-2 uppercase`}>
-              <Zap size={14} className={theme.accent} fill="currentColor" /> Strategic Action
+              <Zap size={14} className={theme.accent} fill="currentColor" /> {t.aiTitles.strategy}
             </h4>
             <div className={`${theme.textMain} text-sm leading-7 prose prose-slate max-w-none font-medium`}><ReactMarkdown>{action}</ReactMarkdown></div>
           </div>
@@ -359,7 +424,7 @@ const AIResponseRenderer = ({ content, theme }) => {
           <div className={`flex items-start gap-3 p-4 rounded-lg border border-dashed ${theme.border} bg-opacity-50`}>
             <Target size={16} className={`${theme.accent} shrink-0 mt-1`} />
             <div className="w-full">
-              <div className={`font-bold ${theme.accent} text-xs mb-1 uppercase tracking-wider`}>Next Moves:</div>
+              <div className={`font-bold ${theme.accent} text-xs mb-1 uppercase tracking-wider`}>{t.aiTitles.next}</div>
               <div className={`${theme.textSub} text-sm leading-6 prose prose-slate max-w-none`}><ReactMarkdown>{next}</ReactMarkdown></div>
             </div>
           </div>
@@ -377,14 +442,17 @@ const AIResponseRenderer = ({ content, theme }) => {
 };
 
 // ==============================================================================
-// 5. 主程序 (包含完整侧边栏和UI逻辑)
+// 5. 主程序 (Echo Main)
 // ==============================================================================
-export default function TrueSelfCoach() {
+export default function EchoCoach() {
   const [currentUser, setCurrentUser] = useState(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
   
-  // 🎨 主题
+  // 🎨 主题 & 语言
   const [currentThemeId, setCurrentThemeId] = useState('royal');
+  const [language, setLanguage] = useState('cn'); // 默认中文
+  const t = TRANSLATIONS[language];
+  
   const theme = THEMES[currentThemeId];
   const [showThemeMenu, setShowThemeMenu] = useState(false);
 
@@ -407,15 +475,13 @@ export default function TrueSelfCoach() {
   const scrollRef = useRef(null);
 
   useEffect(() => {
-    // 监听 Firebase Auth 变化
+    // 监听 Firebase Auth
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      // 如果 Firebase 登录了，覆盖当前用户
       if (user) {
         setCurrentUser(user);
         setLoadingAuth(false);
         loadLocalHistory(user.uid);
       } else {
-        // 如果 Firebase 没登录，但我们可能有 Custom 用户
         if (!currentUser?.isCustomAuth) {
            setLoadingAuth(false);
         }
@@ -425,7 +491,7 @@ export default function TrueSelfCoach() {
   }, []);
 
   const loadLocalHistory = (uid) => {
-      const saved = localStorage.getItem(`zhenwo_history_${uid}`);
+      const saved = localStorage.getItem(`echo_history_${uid}`);
       if (saved) setChatHistory(JSON.parse(saved));
   };
 
@@ -433,7 +499,7 @@ export default function TrueSelfCoach() {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, isThinking]);
 
-  // --- 🔥 核心：文件处理逻辑 ---
+  // --- 🔥 核心：文件处理 ---
   const processFiles = (files) => {
     if (!files || files.length === 0) return;
     const fileArray = Array.from(files);
@@ -448,16 +514,13 @@ export default function TrueSelfCoach() {
     });
   };
 
-  const handleImageUpload = (e) => {
-    processFiles(e.target.files);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
+  const handleImageUpload = (e) => { processFiles(e.target.files); if (fileInputRef.current) fileInputRef.current.value = ''; };
   const handleDragOver = (e) => { e.preventDefault(); setIsDragging(true); };
   const handleDragLeave = (e) => { e.preventDefault(); setIsDragging(false); };
   const handleDrop = (e) => { e.preventDefault(); setIsDragging(false); processFiles(e.dataTransfer.files); };
   const removeImage = (index) => { setImages(prev => prev.filter((_, i) => i !== index)); };
 
+  // --- 💾 会话管理 ---
   const handleNewChat = () => {
     if (!currentSessionId && messages.length > 0 && currentUser) {
       const title = messages[0].content.substring(0, 12) + (messages[0].content.length > 12 ? '...' : '');
@@ -469,7 +532,7 @@ export default function TrueSelfCoach() {
       };
       const updatedHistory = [newHistoryItem, ...chatHistory];
       setChatHistory(updatedHistory);
-      localStorage.setItem(`zhenwo_history_${currentUser.uid}`, JSON.stringify(updatedHistory));
+      localStorage.setItem(`echo_history_${currentUser.uid}`, JSON.stringify(updatedHistory));
     }
     setMessages([]); setImages([]); setInput(''); setCurrentSessionId(null); setShowHistoryMobile(false);
   };
@@ -485,10 +548,11 @@ export default function TrueSelfCoach() {
     e.stopPropagation();
     const updatedHistory = chatHistory.filter(item => item.id !== id);
     setChatHistory(updatedHistory);
-    if(currentUser) localStorage.setItem(`zhenwo_history_${currentUser.uid}`, JSON.stringify(updatedHistory));
+    if(currentUser) localStorage.setItem(`echo_history_${currentUser.uid}`, JSON.stringify(updatedHistory));
     if (currentSessionId === id) { setMessages([]); setCurrentSessionId(null); }
   };
 
+  // --- 🚪 退出与注销 ---
   const handleLogout = () => {
     if (currentUser?.isCustomAuth) {
         setCurrentUser(null);
@@ -499,6 +563,34 @@ export default function TrueSelfCoach() {
     setMessages([]); setCurrentSessionId(null);
   };
 
+  // 🔥🔥🔥 新增：注销账号功能 🔥🔥🔥
+  const handleDeleteAccount = async () => {
+    const confirmMsg = t.deleteConfirm;
+    if (!window.confirm(confirmMsg)) return;
+
+    if (!currentUser || !currentUser.uid) return;
+
+    try {
+        const response = await fetch('[https://echo-api-6d3i.onrender.com/api/auth/delete](https://echo-api-6d3i.onrender.com/api/auth/delete)', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ uid: currentUser.uid })
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            alert("Account deleted successfully.");
+            localStorage.removeItem(`echo_history_${currentUser.uid}`); // 清除本地缓存
+            handleLogout();
+        } else {
+            alert("Failed to delete account: " + (data.error || "Unknown error"));
+        }
+    } catch (e) {
+        alert("Network error: " + e.message);
+    }
+  };
+
+  // --- 📡 发送消息 ---
   const handleSend = async () => {
     if (mode === 'report') {
         setMessages(prev => [...prev, { role: 'assistant', content: "🚧 Report Mode Under Construction" }]);
@@ -514,7 +606,7 @@ export default function TrueSelfCoach() {
     setInput(''); setImages([]); setIsThinking(true);
 
     try {
-      const response = await fetch('https://echo-api-6d3i.onrender.com/api/ask', {
+      const response = await fetch('[https://echo-api-6d3i.onrender.com/api/ask](https://echo-api-6d3i.onrender.com/api/ask)', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -561,17 +653,21 @@ export default function TrueSelfCoach() {
     }
   };
 
-  if (loadingAuth) return <div className="h-screen bg-white flex items-center justify-center text-slate-400 font-mono animate-pulse">INITIALIZING DECODR...</div>;
+  if (loadingAuth) return <div className="h-screen bg-white flex items-center justify-center text-slate-400 font-mono animate-pulse">INITIALIZING ECHO...</div>;
   
-  // 传递 onLogin 回调，处理用户对象
-  if (!currentUser) return <LoginScreen onLogin={(user) => { setCurrentUser(user); loadLocalHistory(user.uid); }} />;
+  // 传递 onLogin 以及语言偏好
+  if (!currentUser) return <LoginScreen onLogin={(user) => { 
+      setCurrentUser(user); 
+      if(user.preferredLang) setLanguage(user.preferredLang); 
+      loadLocalHistory(user.uid); 
+  }} initialLang={language} />;
 
   return (
     <div className={`flex h-screen ${theme.bg} ${theme.textMain} font-sans transition-colors duration-500 overflow-hidden`}>
       
       {/* 📱 Mobile Header */}
       <div className={`md:hidden fixed top-0 w-full h-14 border-b ${theme.border} ${theme.sidebar} z-50 flex items-center justify-between px-4`}>
-         <span className="font-bold font-serif tracking-wide">ZHENWO</span>
+         <span className="font-bold font-serif tracking-wide">{t.appName}</span>
          <button onClick={() => setShowHistoryMobile(!showHistoryMobile)}><Menu size={24}/></button>
       </div>
 
@@ -586,7 +682,7 @@ export default function TrueSelfCoach() {
             <div className={`w-8 h-8 rounded-full ${theme.accentBg} flex items-center justify-center shadow-lg`}>
               <Sparkles size={16} className="text-white" />
             </div>
-            <span className="font-bold text-lg tracking-wide font-serif">ZHENWO</span>
+            <span className="font-bold text-lg tracking-wide font-serif">{t.appName}</span>
           </div>
           <button className="md:hidden" onClick={() => setShowHistoryMobile(false)}><X size={20}/></button>
         </div>
@@ -597,13 +693,13 @@ export default function TrueSelfCoach() {
               className={`w-full flex items-center justify-center gap-2 py-3 ${theme.accentBg} ${theme.accentHover} text-white rounded-xl transition-all shadow-md active:scale-95`}
             >
               <Plus size={18} />
-              <span className="font-bold text-sm">New Session</span>
+              <span className="font-bold text-sm">{t.newSession}</span>
             </button>
         </div>
 
         {/* 📜 历史记录 */}
         <div className="flex-1 overflow-y-auto px-4 py-2 space-y-1">
-            <div className={`text-[10px] font-bold ${theme.textSub} uppercase tracking-widest px-2 mb-2`}>Archives</div>
+            <div className={`text-[10px] font-bold ${theme.textSub} uppercase tracking-widest px-2 mb-2`}>{t.archives}</div>
             {chatHistory.length === 0 && (
                 <div className={`text-xs ${theme.textSub} text-center py-4 italic`}>No past sessions.</div>
             )}
@@ -626,15 +722,25 @@ export default function TrueSelfCoach() {
         </div>
 
         {/* 🎨 底部菜单 */}
-        <div className={`p-4 border-t ${theme.border} space-y-4`}>
+        <div className={`p-4 border-t ${theme.border} space-y-3`}>
+             {/* 语言切换 */}
+             <button 
+                onClick={() => setLanguage(language === 'cn' ? 'en' : 'cn')}
+                className={`w-full flex items-center gap-3 p-2 rounded-lg hover:bg-black/5 transition-all text-xs font-bold ${theme.textMain}`}
+             >
+                <Globe size={14} />
+                <span>{language === 'cn' ? 'Language: 中文' : 'Language: English'}</span>
+             </button>
+
+             {/* 主题切换 */}
              <div className="relative">
                 <button 
                     onClick={() => setShowThemeMenu(!showThemeMenu)}
-                    className={`w-full flex items-center justify-between p-2 rounded-lg border ${theme.border} hover:bg-black/5 transition-all text-xs font-bold ${theme.textMain}`}
+                    className={`w-full flex items-center justify-between p-2 rounded-lg hover:bg-black/5 transition-all text-xs font-bold ${theme.textMain}`}
                 >
                     <div className="flex items-center gap-2">
                         <Palette size={14} />
-                        <span>Theme: {theme.name.split(' ')[0]}</span>
+                        <span>{t.theme}: {theme.name.split(' ')[0]}</span>
                     </div>
                     <ChevronRight size={14} className={`transform transition-transform ${showThemeMenu ? 'rotate-90' : ''}`} />
                 </button>
@@ -647,14 +753,14 @@ export default function TrueSelfCoach() {
                             exit={{ opacity: 0, y: -10 }}
                             className={`absolute bottom-full left-0 w-full mb-2 p-2 rounded-xl border ${theme.border} ${theme.card} shadow-xl z-50 flex flex-col gap-1`}
                         >
-                            {Object.values(THEMES).map(t => (
+                            {Object.values(THEMES).map(th => (
                                 <button
-                                    key={t.id}
-                                    onClick={() => { setCurrentThemeId(t.id); setShowThemeMenu(false); }}
-                                    className={`flex items-center gap-2 p-2 rounded-lg text-xs font-bold transition-all ${currentThemeId === t.id ? theme.accentBg + ' text-white' : 'hover:bg-black/5 ' + theme.textMain}`}
+                                    key={th.id}
+                                    onClick={() => { setCurrentThemeId(th.id); setShowThemeMenu(false); }}
+                                    className={`flex items-center gap-2 p-2 rounded-lg text-xs font-bold transition-all ${currentThemeId === th.id ? theme.accentBg + ' text-white' : 'hover:bg-black/5 ' + theme.textMain}`}
                                 >
-                                    <div className={`w-3 h-3 rounded-full border border-black/10`} style={{ backgroundColor: t.id === 'royal' ? '#60A5FA' : (t.id === 'matcha' ? '#5C9E76' : '#F2CC8F') }} />
-                                    {t.name}
+                                    <div className={`w-3 h-3 rounded-full border border-black/10`} style={{ backgroundColor: th.id === 'royal' ? '#60A5FA' : (th.id === 'matcha' ? '#5C9E76' : '#F2CC8F') }} />
+                                    {th.name}
                                 </button>
                             ))}
                         </motion.div>
@@ -662,6 +768,7 @@ export default function TrueSelfCoach() {
                 </AnimatePresence>
             </div>
 
+            {/* 用户信息与注销 */}
             <div className={`flex items-center gap-3 p-3 rounded-xl ${theme.card} border ${theme.border}`}>
                 {currentUser.photoURL ? (
                     <img src={currentUser.photoURL} className="w-8 h-8 rounded-full border border-slate-200" alt="avatar"/>
@@ -672,9 +779,11 @@ export default function TrueSelfCoach() {
                 )}
                 <div className="flex-1 min-w-0">
                     <div className="text-xs font-medium truncate">{currentUser.displayName || "Commander"}</div>
-                    <div className={`text-[10px] ${theme.textSub} truncate`}>Log Out</div>
+                    <div className={`text-[10px] ${theme.textSub} truncate cursor-pointer hover:text-red-500`} onClick={handleDeleteAccount}>
+                         {t.deleteAccount}
+                    </div>
                 </div>
-                <button onClick={handleLogout} className={`${theme.textSub} hover:text-red-400`}><LogOut size={16} /></button>
+                <button onClick={handleLogout} className={`${theme.textSub} hover:text-red-400`} title={t.logout}><LogOut size={16} /></button>
             </div>
         </div>
       </div>
@@ -695,13 +804,13 @@ export default function TrueSelfCoach() {
                      : `${theme.textSub} hover:${theme.textMain}`
                  }`}
                >
-                 {m}
+                 {t.modes[m]}
                </button>
              ))}
           </div>
           <div className={`flex items-center gap-2 text-xs ${theme.textSub}`}>
              <div className={`w-2 h-2 rounded-full ${isThinking ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
-             {isThinking ? 'NEURAL ENGINE ACTIVE' : 'SYSTEM READY'}
+             {isThinking ? 'NEURAL ENGINE ACTIVE' : t.systemReady}
           </div>
         </div>
 
@@ -724,7 +833,7 @@ export default function TrueSelfCoach() {
                >
                  <div className={`max-w-[90%] md:max-w-[75%] flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                     <span className={`text-[10px] mb-1 font-bold tracking-widest uppercase opacity-60 ${theme.textSub} px-1`}>
-                        {msg.role === 'user' ? 'You' : 'Zhenwo'}
+                        {msg.role === 'user' ? 'You' : 'Echo'}
                     </span>
                     
                     <div className={`rounded-2xl p-5 shadow-sm relative overflow-hidden transition-colors duration-500 ${
@@ -743,7 +852,7 @@ export default function TrueSelfCoach() {
                         {msg.role === 'assistant' 
                            ? (
                              <>
-                               <AIResponseRenderer content={msg.content} theme={theme} />
+                               <AIResponseRenderer content={msg.content} theme={theme} t={t} />
                                {i === messages.length - 1 && isThinking && (
                                  <span className={`inline-block w-1.5 h-4 ml-1 align-middle ${theme.accentBg} animate-pulse`}/>
                                )}
@@ -757,7 +866,7 @@ export default function TrueSelfCoach() {
              ))}
            </AnimatePresence>
 
-           {isThinking && <ThinkingIndicator theme={theme} />}
+           {isThinking && <ThinkingIndicator theme={theme} text={t.thinking} />}
         </div>
 
         {/* 输入框区域 */}
@@ -808,7 +917,7 @@ export default function TrueSelfCoach() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                placeholder="Type your strategy here... (or drag & drop images)"
+                placeholder={t.inputPlaceholder}
                 className={`flex-1 bg-transparent border-none ${theme.textMain} ${theme.placeholder} focus:ring-0 resize-none h-12 py-3 max-h-32 text-sm font-medium`}
               />
               
@@ -824,7 +933,7 @@ export default function TrueSelfCoach() {
            {/* 🔥 页脚声明 */}
            <div className="text-center mt-3">
               <p className="text-[10px] text-slate-400 opacity-60 scale-90">
-                回声为 AI 实验项目，内容由模型生成，不代表医学或专业咨询建议，请谨慎参考。
+                Echo AI Coach Beta | Powered by SiliconFlow
               </p>
            </div>
         </div>
