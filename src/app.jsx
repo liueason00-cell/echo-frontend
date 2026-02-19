@@ -164,7 +164,6 @@ const LoginScreen = ({ onLogin, initialLang = 'cn' }) => {
     e.preventDefault();
     setLoading(true); setError(null);
 
-    // ✅ URL 已修正为你的 Render 后端
     const API_URL = "https://echo-api-6d3i.onrender.com/api/auth"; 
     const endpoint = isCnRegister ? `${API_URL}/register` : `${API_URL}/login`;
 
@@ -442,6 +441,78 @@ const AIResponseRenderer = ({ content, theme, t }) => {
 };
 
 // ==============================================================================
+// 🌟 [新增] 极简付费墙组件 (Paywall Modal)
+// ==============================================================================
+const PaywallModal = ({ isOpen, onClose, user, theme, onNotify }) => {
+  const [isNotifying, setIsNotifying] = useState(false);
+  const [notifySuccess, setNotifySuccess] = useState(false);
+
+  if (!isOpen) return null;
+
+  const handleNotify = async () => {
+    setIsNotifying(true);
+    try {
+      await onNotify();
+      setNotifySuccess(true);
+    } catch (e) {
+      alert("网络异常，请稍后再试");
+    } finally {
+      setIsNotifying(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative"
+      >
+        <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+          <X size={20} />
+        </button>
+
+        <div className={`p-8 pb-6 bg-gradient-to-br from-slate-50 to-blue-50/30 text-center`}>
+          <div className={`w-12 h-12 mx-auto mb-4 rounded-full ${theme.accentBg} flex items-center justify-center shadow-lg`}>
+            <Sparkles size={24} className="text-white" />
+          </div>
+          <h2 className="text-xl font-bold text-slate-800 mb-2">升级 Pro 军师</h2>
+          <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+            解锁 <strong>Google Gemini 2.5 Pro</strong> 深度局势推演，洞察底层逻辑，扭转博弈劣势。
+          </p>
+
+          <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm inline-block mb-2">
+            {/* TODO: 替换为你的真实微信收款码图片 */}
+            <div className="w-40 h-40 bg-slate-100 rounded-lg flex items-center justify-center border border-dashed border-slate-300 text-slate-400 text-xs">
+              [微信收款码占位]
+            </div>
+          </div>
+          
+          <div className="text-2xl font-bold text-slate-800 mb-1">¥49.9<span className="text-sm font-normal text-slate-500">/月</span></div>
+          <div className="text-xs text-rose-500 font-medium mb-6">
+            付款请务必备注账号名：{user?.displayName || user?.email || "未知账号"}
+          </div>
+
+          {!notifySuccess ? (
+            <button 
+              onClick={handleNotify}
+              disabled={isNotifying}
+              className={`w-full py-3.5 rounded-xl font-bold text-white transition-all shadow-md ${theme.accentBg} ${theme.accentHover} disabled:opacity-70 flex justify-center items-center gap-2`}
+            >
+              {isNotifying ? "核实中..." : "我已付款，通知作者开通"}
+            </button>
+          ) : (
+            <div className="w-full py-3.5 rounded-xl font-bold text-emerald-600 bg-emerald-50 flex justify-center items-center gap-2 border border-emerald-200">
+              ✅ 军师已收到提醒，将在 1 小时内开通
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
+// ==============================================================================
 // 5. 主程序 (Echo Main)
 // ==============================================================================
 export default function EchoCoach() {
@@ -462,6 +533,10 @@ export default function EchoCoach() {
   const [images, setImages] = useState([]);
   const [isThinking, setIsThinking] = useState(false);
   const [mode, setMode] = useState('master');
+  
+  // 💰 [新增] 付费墙状态
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [powerLevel, setPowerLevel] = useState('Low'); // 默认权限设为 Low，用于触发拦截
   
   // 🤏 拖拽状态
   const [isDragging, setIsDragging] = useState(false);
@@ -563,7 +638,7 @@ export default function EchoCoach() {
     setMessages([]); setCurrentSessionId(null);
   };
 
-  // 🔥🔥🔥 新增：注销账号功能 🔥🔥🔥
+  // 🔥 删除账号功能
   const handleDeleteAccount = async () => {
     const confirmMsg = t.deleteConfirm;
     if (!window.confirm(confirmMsg)) return;
@@ -571,7 +646,7 @@ export default function EchoCoach() {
     if (!currentUser || !currentUser.uid) return;
 
     try {
-        const response = await fetch('https://echo-api-6d3i.onrender.com/api/auth/delete', {
+        const response = await fetch('[https://echo-api-6d3i.onrender.com/api/auth/delete](https://echo-api-6d3i.onrender.com/api/auth/delete)', {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ uid: currentUser.uid })
@@ -580,7 +655,7 @@ export default function EchoCoach() {
         const data = await response.json();
         if (response.ok) {
             alert("Account deleted successfully.");
-            localStorage.removeItem(`echo_history_${currentUser.uid}`); // 清除本地缓存
+            localStorage.removeItem(`echo_history_${currentUser.uid}`); 
             handleLogout();
         } else {
             alert("Failed to delete account: " + (data.error || "Unknown error"));
@@ -590,10 +665,29 @@ export default function EchoCoach() {
     }
   };
 
+  // 💰 [新增] 调用付款通知 API
+  const handlePaymentNotify = async () => {
+    const res = await fetch('[https://echo-api-6d3i.onrender.com/api/payment-notify](https://echo-api-6d3i.onrender.com/api/payment-notify)', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        userId: currentUser?.uid, 
+        username: currentUser?.displayName || currentUser?.email || 'Unknown'
+      })
+    });
+    if (!res.ok) throw new Error('通知失败');
+  };
+
   // --- 📡 发送消息 ---
   const handleSend = async () => {
     if (mode === 'report') {
         setMessages(prev => [...prev, { role: 'assistant', content: "🚧 Report Mode Under Construction" }]);
+        return;
+    }
+
+    // 🚨 [核心拦截逻辑]：如果是 Master 模式且未开通 Pro，拦截弹窗！
+    if (mode === 'master' && powerLevel !== 'Pro') {
+        setShowPaywall(true);
         return;
     }
 
@@ -606,7 +700,7 @@ export default function EchoCoach() {
     setInput(''); setImages([]); setIsThinking(true);
 
     try {
-      const response = await fetch('https://echo-api-6d3i.onrender.com/api/ask', {
+      const response = await fetch('[https://echo-api-6d3i.onrender.com/api/ask](https://echo-api-6d3i.onrender.com/api/ask)', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -655,7 +749,6 @@ export default function EchoCoach() {
 
   if (loadingAuth) return <div className="h-screen bg-white flex items-center justify-center text-slate-400 font-mono animate-pulse">INITIALIZING ECHO...</div>;
   
-  // 传递 onLogin 以及语言偏好
   if (!currentUser) return <LoginScreen onLogin={(user) => { 
       setCurrentUser(user); 
       if(user.preferredLang) setLanguage(user.preferredLang); 
@@ -778,7 +871,7 @@ export default function EchoCoach() {
                     </div>
                 )}
                 <div className="flex-1 min-w-0">
-                    <div className="text-xs font-medium truncate">{currentUser.displayName || "Commander"}</div>
+                    <div className="text-xs font-medium truncate">{currentUser.displayName || currentUser.email || "Commander"}</div>
                     <div className={`text-[10px] ${theme.textSub} truncate cursor-pointer hover:text-red-500`} onClick={handleDeleteAccount}>
                          {t.deleteAccount}
                     </div>
@@ -939,6 +1032,15 @@ export default function EchoCoach() {
         </div>
 
       </div>
+
+      {/* 🌟 挂载极简付费墙 */}
+      <PaywallModal 
+        isOpen={showPaywall} 
+        onClose={() => setShowPaywall(false)} 
+        user={currentUser}
+        theme={theme}
+        onNotify={handlePaymentNotify}
+      />
     </div>
   );
 }
