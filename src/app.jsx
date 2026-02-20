@@ -492,8 +492,7 @@ const PaywallModal = ({ isOpen, onClose, user, theme, onNotify }) => {
     setRedeemStatus({ loading: true, type: '', text: '' });
     
     try {
-      const res = await fetch('[https://echo-api-6d3i.onrender.com/api/redeem-code](https://echo-api-6d3i.onrender.com/api/redeem-code)', {
-        method: 'POST',
+      const res = await fetch('https://echo-api-6d3i.onrender.com/api/payment-notify', {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user?.uid, code: redeemCode.trim() })
       });
@@ -798,7 +797,7 @@ export default function EchoCoach() {
     if (!currentUser || !currentUser.uid) return;
 
     try {
-        const response = await fetch('[https://echo-api-6d3i.onrender.com/api/auth/delete](https://echo-api-6d3i.onrender.com/api/auth/delete)', {
+        const response = await fetch('https://echo-api-6d3i.onrender.com/api/auth/delete', {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ uid: currentUser.uid })
@@ -819,7 +818,7 @@ export default function EchoCoach() {
 
   // 💰 [升级] 调用付款通知 API (附带选中的套餐名)
   const handlePaymentNotify = async (pkgName) => {
-    const res = await fetch('[https://echo-api-6d3i.onrender.com/api/payment-notify](https://echo-api-6d3i.onrender.com/api/payment-notify)', {
+    const res = await fetch('https://echo-api-6d3i.onrender.com/api/payment-notify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
@@ -847,7 +846,7 @@ export default function EchoCoach() {
     setInput(''); setImages([]); setIsThinking(true);
 
     try {
-      const response = await fetch('[https://echo-api-6d3i.onrender.com/api/ask](https://echo-api-6d3i.onrender.com/api/ask)', {
+      const response = await fetch('https://echo-api-6d3i.onrender.com/api/auth/delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
