@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Image as ImageIcon, Sparkles, User, Zap, LayoutDashboard, Target, Plus, LogOut, BrainCircuit, ChevronRight, Menu, X, Trash2, Palette, UploadCloud, Globe, MapPin, CheckCircle2, Gift } from 'lucide-react';
+import { Send, Image as ImageIcon, Sparkles, User, Zap, LayoutDashboard, Target, Plus, LogOut, BrainCircuit, ChevronRight, Menu, X, Trash2, Palette, UploadCloud, Globe, MapPin, CheckCircle2, Gift, Crown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import LegalFooter from './LegalText'; 
@@ -456,18 +456,15 @@ const AIResponseRenderer = ({ content, theme, t }) => {
 };
 
 // ==============================================================================
-// 🌟 史诗级付费墙 (PaywallModal 2.0 - 多 Tab、裂变、对比计算)
+// 🌟 尊享版黑金付费墙 (PaywallModal 3.0 - Premium UI)
 // ==============================================================================
 const PaywallModal = ({ isOpen, onClose, user, theme, onNotify }) => {
-  const [activeTab, setActiveTab] = useState('sub'); // 'sub', 'ppu', 'redeem'
-  
-  // 状态管理
+  const [activeTab, setActiveTab] = useState('sub'); 
   const [isNotifying, setIsNotifying] = useState(false);
   const [notifySuccess, setNotifySuccess] = useState(false);
   const [redeemCode, setRedeemCode] = useState('');
   const [redeemStatus, setRedeemStatus] = useState({ loading: false, type: '', text: '' });
 
-  // 套餐数据配置
   const SUB_PLANS = [
     { id: '1_week', name: '1周体验', price: 24.9, save: null },
     { id: '1_month', name: '1个月', price: 49.9, save: null, highlight: true },
@@ -485,14 +482,12 @@ const PaywallModal = ({ isOpen, onClose, user, theme, onNotify }) => {
   const [selectedPpu, setSelectedPpu] = useState(PPU_PLANS[1]);
 
   if (!isOpen) return null;
-
   const currentSelection = activeTab === 'sub' ? selectedSub : selectedPpu;
 
-  // 通知作者逻辑
   const handleNotify = async () => {
     setIsNotifying(true);
     try {
-      await onNotify(currentSelection.name); // 传递选中的套餐名
+      await onNotify(currentSelection.name); 
       setNotifySuccess(true);
     } catch (e) {
       alert("网络异常，请稍后再试");
@@ -501,21 +496,19 @@ const PaywallModal = ({ isOpen, onClose, user, theme, onNotify }) => {
     }
   };
 
-  // 兑换码逻辑
   const handleRedeem = async () => {
     if (!redeemCode.trim()) return;
     setRedeemStatus({ loading: true, type: '', text: '' });
-    
     try {
-      const res = await fetch('https://echo-api-6d3i.onrender.com/api/payment-notify', {
+      const res = await fetch('[https://echo-api-6d3i.onrender.com/api/redeem-code](https://echo-api-6d3i.onrender.com/api/redeem-code)', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user?.uid, code: redeemCode.trim() })
       });
       const data = await res.json();
-      
       if (res.ok) {
         setRedeemStatus({ loading: false, type: 'success', text: data.message });
-        setTimeout(() => { onClose(); }, 2500); // 兑换成功后延迟关闭
+        setTimeout(() => { onClose(); }, 2500); 
       } else {
         setRedeemStatus({ loading: false, type: 'error', text: data.error });
       }
@@ -525,43 +518,52 @@ const PaywallModal = ({ isOpen, onClose, user, theme, onNotify }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md px-4">
       <motion.div 
-        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden relative flex flex-col max-h-[90vh]"
+        className="bg-[#0F172A] border border-slate-700/50 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden relative flex flex-col max-h-[90vh] text-slate-200"
       >
-        <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 z-10">
-          <X size={20} />
+        <button onClick={onClose} className="absolute top-5 right-5 text-slate-400 hover:text-white transition-colors z-10 bg-slate-800 p-1.5 rounded-full">
+          <X size={18} />
         </button>
 
-        {/* 头部区域 */}
-        <div className="px-6 pt-6 pb-4 border-b border-slate-100 bg-slate-50">
-           <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-             <Sparkles size={20} className={theme.accent} /> 补充能源
-           </h2>
-           <p className="text-xs text-slate-500 mt-1">解锁完整局势推演，扭转博弈劣势。</p>
+        {/* 头部黑金区域 */}
+        <div className="px-8 pt-8 pb-6 bg-gradient-to-b from-slate-800 to-[#0F172A] relative overflow-hidden">
+           <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl" />
+           <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl" />
+           <div className="flex items-center gap-3 relative z-10">
+             <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-600 to-amber-400 flex items-center justify-center shadow-lg shadow-amber-500/20">
+               <Crown size={20} className="text-white" />
+             </div>
+             <div>
+               <h2 className="text-xl font-bold text-white tracking-wide">升级 PRO 军师</h2>
+               <p className="text-xs text-amber-400/80 mt-0.5">解锁完整高阶局势推演体系</p>
+             </div>
+           </div>
         </div>
 
-        {/* 多 Tab 切换栏 */}
-        <div className="flex px-4 border-b border-slate-100">
-           {[
-             { id: 'sub', label: '👑 升级会员' },
-             { id: 'ppu', label: '⚡️ 次数加油包' },
-             { id: 'redeem', label: '🎁 兑换中心' }
-           ].map(tab => (
-              <button 
-                key={tab.id}
-                onClick={() => { setActiveTab(tab.id); setNotifySuccess(false); }}
-                className={`flex-1 py-3 text-sm font-bold transition-colors border-b-2 ${activeTab === tab.id ? `border-blue-600 text-blue-600` : `border-transparent text-slate-500 hover:text-slate-700`}`}
-              >
-                {tab.label}
-              </button>
-           ))}
+        {/* 胶囊状 Tab 切换 */}
+        <div className="px-6 mb-2">
+           <div className="flex bg-slate-800 p-1 rounded-xl">
+             {[
+               { id: 'sub', label: '👑 会员订阅' },
+               { id: 'ppu', label: '⚡️ 能源包' },
+               { id: 'redeem', label: '🎁 兑换码' }
+             ].map(tab => (
+                <button 
+                  key={tab.id}
+                  onClick={() => { setActiveTab(tab.id); setNotifySuccess(false); }}
+                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${activeTab === tab.id ? `bg-slate-700 text-amber-400 shadow-sm` : `text-slate-400 hover:text-slate-200`}`}
+                >
+                  {tab.label}
+                </button>
+             ))}
+           </div>
         </div>
 
-        {/* 核心内容区 (可滚动) */}
-        <div className="p-6 overflow-y-auto bg-white flex-1">
+        {/* 核心内容区 */}
+        <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
           
           {/* Tab 1: 会员订阅 */}
           {activeTab === 'sub' && (
@@ -570,20 +572,21 @@ const PaywallModal = ({ isOpen, onClose, user, theme, onNotify }) => {
                    <div 
                      key={plan.id}
                      onClick={() => setSelectedSub(plan)}
-                     className={`relative border-2 rounded-xl p-4 cursor-pointer transition-all ${selectedSub.id === plan.id ? `border-blue-500 bg-blue-50/50 shadow-sm` : `border-slate-100 hover:border-blue-200`}`}
+                     className={`relative border rounded-2xl p-4 cursor-pointer transition-all ${selectedSub.id === plan.id ? `border-amber-500/50 bg-amber-500/10 shadow-lg shadow-amber-500/5` : `border-slate-700 bg-slate-800/50 hover:border-slate-600`}`}
                    >
-                      {/* 如果有节省金额，显示角标 */}
                       {plan.save && (
-                         <div className="absolute -top-2.5 right-3 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">
-                           较月付省 ¥{plan.save}
+                         <div className="absolute -top-2.5 right-3 bg-gradient-to-r from-red-500 to-rose-500 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-md">
+                           省 ¥{plan.save}
                          </div>
                       )}
                       <div className="flex justify-between items-center">
                          <div>
-                            <div className="font-bold text-slate-800">{plan.name}</div>
-                            {plan.id === '1_month' && <div className="text-[10px] text-slate-400 mt-0.5">基础周期</div>}
+                            <div className={`font-bold ${selectedSub.id === plan.id ? 'text-amber-400' : 'text-slate-200'}`}>{plan.name}</div>
+                            {plan.id === '1_month' && <div className="text-[10px] text-slate-500 mt-0.5">基础周期推荐</div>}
                          </div>
-                         <div className="text-lg font-bold text-slate-800">¥{plan.price}</div>
+                         <div className={`text-lg font-bold ${selectedSub.id === plan.id ? 'text-white' : 'text-slate-300'}`}>
+                           ¥{plan.price}
+                         </div>
                       </div>
                    </div>
                 ))}
@@ -597,10 +600,10 @@ const PaywallModal = ({ isOpen, onClose, user, theme, onNotify }) => {
                    <div 
                      key={plan.id}
                      onClick={() => setSelectedPpu(plan)}
-                     className={`border-2 rounded-xl p-4 cursor-pointer flex flex-col items-center justify-center text-center transition-all ${selectedPpu.id === plan.id ? `border-blue-500 bg-blue-50/50 shadow-sm` : `border-slate-100 hover:border-blue-200`}`}
+                     className={`border rounded-2xl p-5 cursor-pointer flex flex-col items-center justify-center text-center transition-all ${selectedPpu.id === plan.id ? `border-amber-500/50 bg-amber-500/10` : `border-slate-700 bg-slate-800/50 hover:border-slate-600`}`}
                    >
-                      <div className="text-xl font-bold text-slate-800 mb-1">¥{plan.price}</div>
-                      <div className="text-xs font-medium text-slate-600">{plan.name}</div>
+                      <div className={`text-2xl font-bold mb-1 ${selectedPpu.id === plan.id ? 'text-amber-400' : 'text-slate-200'}`}>¥{plan.price}</div>
+                      <div className="text-xs font-medium text-slate-400">{plan.name}</div>
                    </div>
                 ))}
              </div>
@@ -608,12 +611,12 @@ const PaywallModal = ({ isOpen, onClose, user, theme, onNotify }) => {
 
           {/* Tab 3: 兑换中心 */}
           {activeTab === 'redeem' && (
-             <div className="py-4 space-y-4 animate-in fade-in duration-300">
+             <div className="py-2 space-y-4 animate-in fade-in duration-300">
                 <div className="text-center mb-6">
-                   <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <Gift size={28} className="text-emerald-500" />
+                   <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3 border border-slate-700">
+                      <Gift size={24} className="text-amber-400" />
                    </div>
-                   <h3 className="font-bold text-slate-800">输入您的专属兑换码</h3>
+                   <h3 className="font-bold text-slate-200 text-sm">输入专属兑换码</h3>
                 </div>
                 
                 <input 
@@ -621,11 +624,11 @@ const PaywallModal = ({ isOpen, onClose, user, theme, onNotify }) => {
                   value={redeemCode}
                   onChange={(e) => setRedeemCode(e.target.value.toUpperCase())}
                   placeholder="ECHO-XXXX-XXXX"
-                  className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl text-center font-mono font-bold text-slate-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none transition-all tracking-wider uppercase"
+                  className="w-full p-4 bg-slate-900 border border-slate-700 rounded-xl text-center font-mono font-bold text-amber-400 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all tracking-wider placeholder-slate-600"
                 />
 
                 {redeemStatus.text && (
-                  <div className={`text-xs text-center font-bold p-2 rounded-lg ${redeemStatus.type === 'error' ? 'text-rose-600 bg-rose-50' : 'text-emerald-600 bg-emerald-50'}`}>
+                  <div className={`text-xs text-center font-bold p-3 rounded-xl ${redeemStatus.type === 'error' ? 'text-rose-400 bg-rose-500/10 border border-rose-500/20' : 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20'}`}>
                     {redeemStatus.text}
                   </div>
                 )}
@@ -633,42 +636,42 @@ const PaywallModal = ({ isOpen, onClose, user, theme, onNotify }) => {
                 <button
                   onClick={handleRedeem}
                   disabled={redeemStatus.loading || !redeemCode.trim()}
-                  className="w-full py-3.5 bg-slate-900 text-white font-bold rounded-xl shadow-md hover:bg-slate-800 disabled:opacity-50 transition-all"
+                  className="w-full py-4 bg-amber-500 text-slate-900 font-bold rounded-xl shadow-[0_0_15px_rgba(245,158,11,0.3)] hover:bg-amber-400 hover:shadow-[0_0_20px_rgba(245,158,11,0.5)] disabled:opacity-50 disabled:shadow-none transition-all"
                 >
                   {redeemStatus.loading ? "正在核销..." : "立即兑换"}
                 </button>
              </div>
           )}
 
-          {/* 收款逻辑区 (仅在选择 Sub 或 PPU 时显示) */}
+          {/* 收款逻辑区 */}
           {(activeTab === 'sub' || activeTab === 'ppu') && (
-            <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col items-center animate-in fade-in">
-                <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm inline-block mb-4 relative">
+            <div className="mt-8 pt-6 border-t border-slate-700/50 flex flex-col items-center animate-in fade-in">
+                <div className="bg-white p-2 rounded-2xl shadow-[0_0_30px_rgba(255,255,255,0.1)] inline-block mb-4 relative">
                   <img 
                     src="/paycode.jpg" 
                     alt="微信收款码" 
-                    className="w-32 h-32 object-contain rounded-lg"
+                    className="w-36 h-36 object-contain rounded-xl"
                   />
                 </div>
                 
-                <div className="text-xs font-bold text-slate-800 mb-1 bg-yellow-100 px-3 py-1 rounded">
+                <div className="text-xs font-bold text-amber-200 mb-1 bg-amber-500/20 px-4 py-1.5 rounded-lg border border-amber-500/30">
                   付款备注：{user?.displayName || user?.email || "未知账号"} + {currentSelection.name}
                 </div>
-                <div className="text-[10px] text-slate-400 mb-6 text-center">
-                  支付 <span className="text-rose-500 font-bold">¥{currentSelection.price}</span> 后点击下方按钮，系统将自动核实。
+                <div className="text-[10px] text-slate-400 mb-6 text-center mt-2">
+                  支付 <span className="text-rose-400 font-bold">¥{currentSelection.price}</span> 后点击下方按钮。
                 </div>
 
                 {!notifySuccess ? (
                   <button 
                     onClick={handleNotify}
                     disabled={isNotifying}
-                    className={`w-full py-3.5 rounded-xl font-bold text-white transition-all shadow-md ${theme.accentBg} ${theme.accentHover} disabled:opacity-70 flex justify-center items-center gap-2`}
+                    className="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-500 text-white font-bold rounded-xl shadow-lg hover:from-blue-500 hover:to-blue-400 disabled:opacity-70 transition-all flex justify-center items-center gap-2"
                   >
                     {isNotifying ? "提交中..." : "我已付款，通知作者开通"}
                   </button>
                 ) : (
-                  <div className="w-full py-3.5 rounded-xl font-bold text-emerald-600 bg-emerald-50 flex justify-center items-center gap-2 border border-emerald-200">
-                    <CheckCircle2 size={18} /> 通知已发送，将在 1 小时内到账
+                  <div className="w-full py-4 rounded-xl font-bold text-emerald-400 bg-emerald-500/10 flex justify-center items-center gap-2 border border-emerald-500/20">
+                    <CheckCircle2 size={18} /> 军师已收到提醒，稍后为您开通
                   </div>
                 )}
             </div>
@@ -812,7 +815,7 @@ export default function EchoCoach() {
     if (!currentUser || !currentUser.uid) return;
 
     try {
-        const response = await fetch('https://echo-api-6d3i.onrender.com/api/auth/delete', {
+        const response = await fetch('[https://echo-api-6d3i.onrender.com/api/auth/delete](https://echo-api-6d3i.onrender.com/api/auth/delete)', {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ uid: currentUser.uid })
@@ -833,7 +836,7 @@ export default function EchoCoach() {
 
   // 💰 [升级] 调用付款通知 API (附带选中的套餐名)
   const handlePaymentNotify = async (pkgName) => {
-    const res = await fetch('https://echo-api-6d3i.onrender.com/api/payment-notify', {
+    const res = await fetch('[https://echo-api-6d3i.onrender.com/api/payment-notify](https://echo-api-6d3i.onrender.com/api/payment-notify)', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
@@ -861,7 +864,7 @@ export default function EchoCoach() {
     setInput(''); setImages([]); setIsThinking(true);
 
     try {
-      const response = await fetch('https://echo-api-6d3i.onrender.com/api/ask', {
+      const response = await fetch('[https://echo-api-6d3i.onrender.com/api/ask](https://echo-api-6d3i.onrender.com/api/ask)', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -985,6 +988,19 @@ export default function EchoCoach() {
 
         {/* 🎨 底部菜单 */}
         <div className={`p-4 border-t ${theme.border} space-y-3`}>
+            
+            {/* 🌟 新增：常驻充值升级按钮 */}
+            <button 
+                onClick={() => setShowPaywall(true)}
+                className={`w-full flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md hover:shadow-lg transition-all active:scale-95`}
+            >
+                <div className="flex items-center gap-2 font-bold text-sm">
+                    <Crown size={16} className="text-amber-100" />
+                    <span>升级 Pro 军师</span>
+                </div>
+                <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-bold tracking-wider uppercase">特惠</span>
+            </button>
+
              {/* 语言切换 */}
              <button 
                 onClick={() => setLanguage(language === 'cn' ? 'en' : 'cn')}
