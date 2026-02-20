@@ -345,8 +345,9 @@ const ThinkingIndicator = ({ theme, text }) => (
   </motion.div>
 );
 
+
 // ==============================================================================
-// 4. 🚀 智能消息渲染器
+// 4. 🚀 智能消息渲染器 (✅ 修复流式文字消失 Bug)
 // ==============================================================================
 const AIResponseRenderer = ({ content, theme, t }) => {
   if (!content) return null;
@@ -383,56 +384,70 @@ const AIResponseRenderer = ({ content, theme, t }) => {
         );
       }
     } catch (e) {
-      console.warn("JSON Parse Error:", e);
+      // JSON 还没生成完时，静默捕获，让它继续往下走 Fallback 显示实时打字过程
     }
   }
 
-  // 2️⃣ Master Mode XML
+  // 2️⃣ Master Mode XML (✅ 支持流式实时边写边解析)
   if (content.includes(':::')) {
     const extract = (tag) => {
-      const regex = new RegExp(`:::${tag}:::([\\s\\S]*?):::END_${tag}:::`);
-      const match = content.match(regex);
-      return match ? match[1].trim() : null;
+      const startTag = `:::${tag}:::`;
+      const endTag = `:::END_${tag}:::`;
+      
+      if (!content.includes(startTag)) return null;
+      
+      const startIndex = content.indexOf(startTag) + startTag.length;
+      let endIndex = content.indexOf(endTag);
+      
+      // 🌟 核心修复：如果还没生成到结束标签（正在打字中），就把目前生成的所有内容截取出来渲染！
+      if (endIndex === -1) {
+         return content.substring(startIndex).trim();
+      }
+      
+      return content.substring(startIndex, endIndex).trim();
     };
 
     const analysis = extract('ANALYSIS');
     const action = extract('ACTION');
     const next = extract('NEXT');
 
-    return (
-      <div className="space-y-4 w-full">
-        {analysis && (
-          <div className={`border-l-4 ${theme.borderHighlight} pl-4 py-1`}>
-            <h4 className={`${theme.accent} text-xs font-bold tracking-wider mb-2 flex items-center gap-2 uppercase opacity-80`}>
-              <LayoutDashboard size={14} /> {t.aiTitles.analysis}
-            </h4>
-            <div className={`${theme.textMain} text-sm leading-6 prose prose-slate max-w-none`}><ReactMarkdown>{analysis}</ReactMarkdown></div>
-          </div>
-        )}
+    // 如果其中任何一个有内容，就渲染漂亮的卡片 UI
+    if (analysis || action || next) {
+        return (
+          <div className="space-y-4 w-full">
+            {analysis && (
+              <div className={`border-l-4 ${theme.borderHighlight} pl-4 py-1`}>
+                <h4 className={`${theme.accent} text-xs font-bold tracking-wider mb-2 flex items-center gap-2 uppercase opacity-80`}>
+                  <LayoutDashboard size={14} /> {t.aiTitles.analysis}
+                </h4>
+                <div className={`${theme.textMain} text-sm leading-6 prose prose-slate max-w-none`}><ReactMarkdown>{analysis}</ReactMarkdown></div>
+              </div>
+            )}
 
-        {action && (
-          <div className={`${theme.card} p-5 rounded-xl relative overflow-hidden`}>
-            <h4 className={`${theme.textMain} text-xs font-bold tracking-wider mb-3 flex items-center gap-2 uppercase`}>
-              <Zap size={14} className={theme.accent} fill="currentColor" /> {t.aiTitles.strategy}
-            </h4>
-            <div className={`${theme.textMain} text-sm leading-7 prose prose-slate max-w-none font-medium`}><ReactMarkdown>{action}</ReactMarkdown></div>
-          </div>
-        )}
+            {action && (
+              <div className={`${theme.card} p-5 rounded-xl relative overflow-hidden`}>
+                <h4 className={`${theme.textMain} text-xs font-bold tracking-wider mb-3 flex items-center gap-2 uppercase`}>
+                  <Zap size={14} className={theme.accent} fill="currentColor" /> {t.aiTitles.strategy}
+                </h4>
+                <div className={`${theme.textMain} text-sm leading-7 prose prose-slate max-w-none font-medium`}><ReactMarkdown>{action}</ReactMarkdown></div>
+              </div>
+            )}
 
-        {next && (
-          <div className={`flex items-start gap-3 p-4 rounded-lg border border-dashed ${theme.border} bg-opacity-50`}>
-            <Target size={16} className={`${theme.accent} shrink-0 mt-1`} />
-            <div className="w-full">
-              <div className={`font-bold ${theme.accent} text-xs mb-1 uppercase tracking-wider`}>{t.aiTitles.next}</div>
-              <div className={`${theme.textSub} text-sm leading-6 prose prose-slate max-w-none`}><ReactMarkdown>{next}</ReactMarkdown></div>
-            </div>
+            {next && (
+              <div className={`flex items-start gap-3 p-4 rounded-lg border border-dashed ${theme.border} bg-opacity-50`}>
+                <Target size={16} className={`${theme.accent} shrink-0 mt-1`} />
+                <div className="w-full">
+                  <div className={`font-bold ${theme.accent} text-xs mb-1 uppercase tracking-wider`}>{t.aiTitles.next}</div>
+                  <div className={`${theme.textSub} text-sm leading-6 prose prose-slate max-w-none`}><ReactMarkdown>{next}</ReactMarkdown></div>
+                </div>
+              </div>
+            )}
           </div>
-        )}
-      </div>
-    );
+        );
+    }
   }
 
-  // 3️⃣ Markdown Fallback
+  // 3️⃣ Markdown Fallback (实时兜底打字效果)
   return (
     <div className={`leading-relaxed text-sm ${theme.textMain} prose prose-slate max-w-none`}>
       <ReactMarkdown>{content}</ReactMarkdown>
