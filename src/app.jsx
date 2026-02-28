@@ -349,6 +349,9 @@ const ThinkingIndicator = ({ theme, text }) => (
 // ==============================================================================
 // 4. 🚀 智能消息渲染器 (✅ 升级为无界宽屏+大行距阅读模式)
 // ==============================================================================
+// ==============================================================================
+// 4. 🚀 智能消息渲染器 (✅ 极致美学排版：H3大间距 + Blockquote引用块)
+// ==============================================================================
 const AIResponseRenderer = ({ content, theme, t }) => {
   if (!content) return null;
 
@@ -386,6 +389,16 @@ const AIResponseRenderer = ({ content, theme, t }) => {
     } catch (e) {}
   }
 
+  // 🌟 统一定义极致排版的 Markdown Tailwind 样式类
+  // 重点加了 prose-h3 (大标题间距) 和 prose-blockquote (精美点评框)
+  const premiumMarkdownStyles = `
+    text-[15px] md:text-base leading-[1.8] tracking-wide prose prose-slate max-w-none 
+    prose-p:mb-5 
+    prose-h3:text-[17px] md:prose-h3:text-[18px] prose-h3:font-bold prose-h3:mt-10 prose-h3:mb-4 prose-h3:text-slate-800 
+    prose-blockquote:not-italic prose-blockquote:border-l-[4px] prose-blockquote:border-slate-300 prose-blockquote:bg-slate-50 prose-blockquote:py-2 prose-blockquote:px-5 prose-blockquote:rounded-r-xl prose-blockquote:text-slate-600 prose-blockquote:mt-3 prose-blockquote:mb-8
+    prose-strong:text-slate-900 prose-strong:font-bold
+  `;
+
   // 2️⃣ Master Mode XML
   if (content.includes(':::')) {
     const extract = (tag) => {
@@ -404,15 +417,14 @@ const AIResponseRenderer = ({ content, theme, t }) => {
 
     if (analysis || action || next) {
         return (
-          <div className="space-y-8 w-full"> {/* 板块之间增加大间距 */}
+          <div className="space-y-8 w-full"> 
             
             {analysis && (
               <div className={`border-l-[4px] ${theme.borderHighlight} pl-5 py-1`}>
                 <h4 className={`${theme.accent} text-sm font-bold tracking-widest mb-4 flex items-center gap-2 uppercase opacity-80`}>
                   <LayoutDashboard size={16} /> {t.aiTitles.analysis}
                 </h4>
-                {/* 增加 leading-[1.8] 超级行距，优化 markdown 加粗样式 */}
-                <div className={`${theme.textMain} text-[15px] md:text-base leading-[1.8] tracking-wide prose prose-slate max-w-none prose-p:mb-5 prose-li:mb-2 prose-strong:text-slate-900 prose-strong:font-bold prose-strong:bg-yellow-500/10 prose-strong:px-1`}>
+                <div className={`${theme.textMain} ${premiumMarkdownStyles}`}>
                   <ReactMarkdown>{analysis}</ReactMarkdown>
                 </div>
               </div>
@@ -420,11 +432,10 @@ const AIResponseRenderer = ({ content, theme, t }) => {
 
             {action && (
               <div className={`${theme.card} p-6 md:p-8 rounded-2xl relative overflow-hidden shadow-sm`}>
-                <h4 className={`${theme.textMain} text-sm font-bold tracking-widest mb-6 flex items-center gap-2 uppercase`}>
+                <h4 className={`${theme.textMain} text-sm font-bold tracking-widest mb-2 flex items-center gap-2 uppercase`}>
                   <Zap size={16} className={theme.accent} fill="currentColor" /> {t.aiTitles.strategy}
                 </h4>
-                {/* 🌟 核心修改 1：将 prose-p:mb-5 改为 prose-p:mb-8，大大增加选项之间的呼吸感！ */}
-                <div className={`${theme.textMain} text-[15px] md:text-base leading-[1.8] tracking-wide prose prose-slate max-w-none prose-p:mb-8 prose-li:mb-4 prose-strong:text-slate-900 prose-strong:font-bold`}>
+                <div className={`${theme.textMain} ${premiumMarkdownStyles}`}>
                   <ReactMarkdown>{action}</ReactMarkdown>
                 </div>
               </div>
@@ -434,9 +445,8 @@ const AIResponseRenderer = ({ content, theme, t }) => {
               <div className={`flex items-start gap-4 p-6 rounded-2xl border border-dashed ${theme.border} bg-opacity-30`}>
                 <Target size={20} className={`${theme.accent} shrink-0 mt-1`} />
                 <div className="w-full">
-                  <div className={`font-bold ${theme.accent} text-sm mb-4 uppercase tracking-widest`}>{t.aiTitles.next}</div>
-                  {/* 🌟 核心修改 2：把 theme.textSub 换成了 theme.textMain，并且把段落间距也加大到 prose-p:mb-6 */}
-                  <div className={`${theme.textMain} text-[15px] md:text-base leading-[1.8] tracking-wide prose prose-slate max-w-none prose-p:mb-6 prose-strong:text-slate-900 prose-strong:font-bold`}>
+                  <div className={`font-bold ${theme.accent} text-sm mb-2 uppercase tracking-widest`}>{t.aiTitles.next}</div>
+                  <div className={`${theme.textMain} ${premiumMarkdownStyles}`}>
                     <ReactMarkdown>{next}</ReactMarkdown>
                   </div>
                 </div>
@@ -449,7 +459,7 @@ const AIResponseRenderer = ({ content, theme, t }) => {
 
   // 3️⃣ Markdown Fallback
   return (
-    <div className={`text-[15px] md:text-base leading-[1.8] tracking-wide ${theme.textMain} prose prose-slate max-w-none prose-p:mb-5 prose-strong:font-bold`}>
+    <div className={`${theme.textMain} ${premiumMarkdownStyles}`}>
       <ReactMarkdown>{content}</ReactMarkdown>
     </div>
   );
