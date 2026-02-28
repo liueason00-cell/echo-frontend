@@ -420,10 +420,11 @@ const AIResponseRenderer = ({ content, theme, t }) => {
 
             {action && (
               <div className={`${theme.card} p-6 md:p-8 rounded-2xl relative overflow-hidden shadow-sm`}>
-                <h4 className={`${theme.textMain} text-sm font-bold tracking-widest mb-5 flex items-center gap-2 uppercase`}>
+                <h4 className={`${theme.textMain} text-sm font-bold tracking-widest mb-6 flex items-center gap-2 uppercase`}>
                   <Zap size={16} className={theme.accent} fill="currentColor" /> {t.aiTitles.strategy}
                 </h4>
-                <div className={`${theme.textMain} text-[15px] md:text-base leading-[1.8] tracking-wide prose prose-slate max-w-none prose-p:mb-5 prose-li:mb-2 prose-strong:text-slate-900 prose-strong:font-bold`}>
+                {/* 🌟 核心修改 1：将 prose-p:mb-5 改为 prose-p:mb-8，大大增加选项之间的呼吸感！ */}
+                <div className={`${theme.textMain} text-[15px] md:text-base leading-[1.8] tracking-wide prose prose-slate max-w-none prose-p:mb-8 prose-li:mb-4 prose-strong:text-slate-900 prose-strong:font-bold`}>
                   <ReactMarkdown>{action}</ReactMarkdown>
                 </div>
               </div>
@@ -433,8 +434,9 @@ const AIResponseRenderer = ({ content, theme, t }) => {
               <div className={`flex items-start gap-4 p-6 rounded-2xl border border-dashed ${theme.border} bg-opacity-30`}>
                 <Target size={20} className={`${theme.accent} shrink-0 mt-1`} />
                 <div className="w-full">
-                  <div className={`font-bold ${theme.accent} text-sm mb-3 uppercase tracking-widest`}>{t.aiTitles.next}</div>
-                  <div className={`${theme.textSub} text-[15px] md:text-base leading-[1.8] tracking-wide prose prose-slate max-w-none prose-p:mb-4 prose-strong:text-slate-800`}>
+                  <div className={`font-bold ${theme.accent} text-sm mb-4 uppercase tracking-widest`}>{t.aiTitles.next}</div>
+                  {/* 🌟 核心修改 2：把 theme.textSub 换成了 theme.textMain，并且把段落间距也加大到 prose-p:mb-6 */}
+                  <div className={`${theme.textMain} text-[15px] md:text-base leading-[1.8] tracking-wide prose prose-slate max-w-none prose-p:mb-6 prose-strong:text-slate-900 prose-strong:font-bold`}>
                     <ReactMarkdown>{next}</ReactMarkdown>
                   </div>
                 </div>
