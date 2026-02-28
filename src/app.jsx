@@ -347,7 +347,7 @@ const ThinkingIndicator = ({ theme, text }) => (
 
 
 // ==============================================================================
-// 4. 🚀 智能消息渲染器 (✅ 修复流式文字消失 Bug)
+// 4. 🚀 智能消息渲染器 (✅ 升级为无界宽屏+大行距阅读模式)
 // ==============================================================================
 const AIResponseRenderer = ({ content, theme, t }) => {
   if (!content) return null;
@@ -364,17 +364,17 @@ const AIResponseRenderer = ({ content, theme, t }) => {
       const data = JSON.parse(cleanContent);
       if (data.replies && Array.isArray(data.replies)) {
         return (
-          <div className="space-y-3 w-full">
-            <h4 className={`${theme.accent} text-xs font-bold tracking-wider mb-2 uppercase flex items-center gap-2`}>
-              <Zap size={14} /> {t.aiTitles.quick}
+          <div className="space-y-4 w-full">
+            <h4 className={`${theme.accent} text-sm font-bold tracking-wider mb-3 uppercase flex items-center gap-2`}>
+              <Zap size={16} /> {t.aiTitles.quick}
             </h4>
-            <div className="grid gap-3">
+            <div className="grid gap-4">
               {data.replies.map((reply, idx) => (
-                <div key={idx} className={`${theme.card} p-3 rounded-lg border ${theme.border} hover:shadow-md transition-shadow`}>
-                  <div className={`text-[10px] font-bold ${theme.accent} mb-1 uppercase tracking-wide opacity-80`}>
+                <div key={idx} className={`${theme.card} p-5 rounded-xl border ${theme.border} hover:shadow-md transition-shadow`}>
+                  <div className={`text-xs font-bold ${theme.accent} mb-2 uppercase tracking-widest opacity-80`}>
                     {reply.type}
                   </div>
-                  <div className={`${theme.textMain} text-sm font-medium leading-relaxed`}>
+                  <div className={`${theme.textMain} text-[15px] md:text-base font-medium leading-[1.8]`}>
                     "{reply.content}"
                   </div>
                 </div>
@@ -383,27 +383,18 @@ const AIResponseRenderer = ({ content, theme, t }) => {
           </div>
         );
       }
-    } catch (e) {
-      // JSON 还没生成完时，静默捕获，让它继续往下走 Fallback 显示实时打字过程
-    }
+    } catch (e) {}
   }
 
-  // 2️⃣ Master Mode XML (✅ 支持流式实时边写边解析)
+  // 2️⃣ Master Mode XML
   if (content.includes(':::')) {
     const extract = (tag) => {
       const startTag = `:::${tag}:::`;
       const endTag = `:::END_${tag}:::`;
-      
       if (!content.includes(startTag)) return null;
-      
       const startIndex = content.indexOf(startTag) + startTag.length;
       let endIndex = content.indexOf(endTag);
-      
-      // 🌟 核心修复：如果还没生成到结束标签（正在打字中），就把目前生成的所有内容截取出来渲染！
-      if (endIndex === -1) {
-         return content.substring(startIndex).trim();
-      }
-      
+      if (endIndex === -1) return content.substring(startIndex).trim();
       return content.substring(startIndex, endIndex).trim();
     };
 
@@ -411,34 +402,41 @@ const AIResponseRenderer = ({ content, theme, t }) => {
     const action = extract('ACTION');
     const next = extract('NEXT');
 
-    // 如果其中任何一个有内容，就渲染漂亮的卡片 UI
     if (analysis || action || next) {
         return (
-          <div className="space-y-4 w-full">
+          <div className="space-y-8 w-full"> {/* 板块之间增加大间距 */}
+            
             {analysis && (
-              <div className={`border-l-4 ${theme.borderHighlight} pl-4 py-1`}>
-                <h4 className={`${theme.accent} text-xs font-bold tracking-wider mb-2 flex items-center gap-2 uppercase opacity-80`}>
-                  <LayoutDashboard size={14} /> {t.aiTitles.analysis}
+              <div className={`border-l-[4px] ${theme.borderHighlight} pl-5 py-1`}>
+                <h4 className={`${theme.accent} text-sm font-bold tracking-widest mb-4 flex items-center gap-2 uppercase opacity-80`}>
+                  <LayoutDashboard size={16} /> {t.aiTitles.analysis}
                 </h4>
-                <div className={`${theme.textMain} text-sm leading-6 prose prose-slate max-w-none`}><ReactMarkdown>{analysis}</ReactMarkdown></div>
+                {/* 增加 leading-[1.8] 超级行距，优化 markdown 加粗样式 */}
+                <div className={`${theme.textMain} text-[15px] md:text-base leading-[1.8] tracking-wide prose prose-slate max-w-none prose-p:mb-5 prose-li:mb-2 prose-strong:text-slate-900 prose-strong:font-bold prose-strong:bg-yellow-500/10 prose-strong:px-1`}>
+                  <ReactMarkdown>{analysis}</ReactMarkdown>
+                </div>
               </div>
             )}
 
             {action && (
-              <div className={`${theme.card} p-5 rounded-xl relative overflow-hidden`}>
-                <h4 className={`${theme.textMain} text-xs font-bold tracking-wider mb-3 flex items-center gap-2 uppercase`}>
-                  <Zap size={14} className={theme.accent} fill="currentColor" /> {t.aiTitles.strategy}
+              <div className={`${theme.card} p-6 md:p-8 rounded-2xl relative overflow-hidden shadow-sm`}>
+                <h4 className={`${theme.textMain} text-sm font-bold tracking-widest mb-5 flex items-center gap-2 uppercase`}>
+                  <Zap size={16} className={theme.accent} fill="currentColor" /> {t.aiTitles.strategy}
                 </h4>
-                <div className={`${theme.textMain} text-sm leading-7 prose prose-slate max-w-none font-medium`}><ReactMarkdown>{action}</ReactMarkdown></div>
+                <div className={`${theme.textMain} text-[15px] md:text-base leading-[1.8] tracking-wide prose prose-slate max-w-none prose-p:mb-5 prose-li:mb-2 prose-strong:text-slate-900 prose-strong:font-bold`}>
+                  <ReactMarkdown>{action}</ReactMarkdown>
+                </div>
               </div>
             )}
 
             {next && (
-              <div className={`flex items-start gap-3 p-4 rounded-lg border border-dashed ${theme.border} bg-opacity-50`}>
-                <Target size={16} className={`${theme.accent} shrink-0 mt-1`} />
+              <div className={`flex items-start gap-4 p-6 rounded-2xl border border-dashed ${theme.border} bg-opacity-30`}>
+                <Target size={20} className={`${theme.accent} shrink-0 mt-1`} />
                 <div className="w-full">
-                  <div className={`font-bold ${theme.accent} text-xs mb-1 uppercase tracking-wider`}>{t.aiTitles.next}</div>
-                  <div className={`${theme.textSub} text-sm leading-6 prose prose-slate max-w-none`}><ReactMarkdown>{next}</ReactMarkdown></div>
+                  <div className={`font-bold ${theme.accent} text-sm mb-3 uppercase tracking-widest`}>{t.aiTitles.next}</div>
+                  <div className={`${theme.textSub} text-[15px] md:text-base leading-[1.8] tracking-wide prose prose-slate max-w-none prose-p:mb-4 prose-strong:text-slate-800`}>
+                    <ReactMarkdown>{next}</ReactMarkdown>
+                  </div>
                 </div>
               </div>
             )}
@@ -447,9 +445,9 @@ const AIResponseRenderer = ({ content, theme, t }) => {
     }
   }
 
-  // 3️⃣ Markdown Fallback (实时兜底打字效果)
+  // 3️⃣ Markdown Fallback
   return (
-    <div className={`leading-relaxed text-sm ${theme.textMain} prose prose-slate max-w-none`}>
+    <div className={`text-[15px] md:text-base leading-[1.8] tracking-wide ${theme.textMain} prose prose-slate max-w-none prose-p:mb-5 prose-strong:font-bold`}>
       <ReactMarkdown>{content}</ReactMarkdown>
     </div>
   );
@@ -815,7 +813,7 @@ export default function EchoCoach() {
     if (!currentUser || !currentUser.uid) return;
 
     try {
-        fetch('https://echo-api-6d3i.onrender.com/api/auth/delete', {
+        fetch('[https://echo-api-6d3i.onrender.com/api/auth/delete](https://echo-api-6d3i.onrender.com/api/auth/delete)', {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ uid: currentUser.uid })
@@ -836,7 +834,7 @@ export default function EchoCoach() {
 
   // 💰 [升级] 调用付款通知 API (附带选中的套餐名)
   const handlePaymentNotify = async (pkgName) => {
-    fetch('https://echo-api-6d3i.onrender.com/api/payment-notify', {
+    fetch('[https://echo-api-6d3i.onrender.com/api/payment-notify](https://echo-api-6d3i.onrender.com/api/payment-notify)', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
@@ -864,7 +862,7 @@ export default function EchoCoach() {
     setInput(''); setImages([]); setIsThinking(true);
 
     try {
-      const response = await fetch('https://echo-api-6d3i.onrender.com/api/ask', {
+      const response = await fetch('[https://echo-api-6d3i.onrender.com/api/ask](https://echo-api-6d3i.onrender.com/api/ask)', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -1105,38 +1103,43 @@ export default function EchoCoach() {
              {messages.map((msg, i) => (
                <motion.div 
                  key={i} 
-                 initial={{ opacity: 0, y: 10 }} 
+                 initial={{ opacity: 0, y: 15 }} 
                  animate={{ opacity: 1, y: 0 }}
-                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                 // 如果是用户，靠右显示；如果是 AI，直接铺满全宽 (w-full)
+                 className={`flex w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                >
-                 <div className={`max-w-[90%] md:max-w-[75%] flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                    <span className={`text-[10px] mb-1 font-bold tracking-widest uppercase opacity-60 ${theme.textSub} px-1`}>
+                 {/* AI 不再限制宽度，铺满父级。用户保留 max-w-[75%] 宽度限制 */}
+                 <div className={`flex flex-col ${msg.role === 'user' ? 'max-w-[90%] md:max-w-[75%] items-end' : 'w-full items-start'}`}>
+                    
+                    <span className={`text-[10px] mb-2 font-bold tracking-widest uppercase opacity-60 ${theme.textSub} px-2`}>
                         {msg.role === 'user' ? 'You' : 'Echo'}
                     </span>
                     
-                    <div className={`rounded-2xl p-5 shadow-sm relative overflow-hidden transition-colors duration-500 ${
+                    {/* 气泡样式区分：用户保留漂亮的气泡，AI 彻底去掉气泡和背景色，纯透明铺开 */}
+                    <div className={`relative transition-colors duration-500 ${
                         msg.role === 'user' 
-                          ? `${theme.userBubble} ${theme.userText} rounded-tr-sm` 
-                          : `${theme.aiBubble} rounded-tl-sm`
+                          ? `rounded-3xl p-5 shadow-sm overflow-hidden ${theme.userBubble} ${theme.userText} rounded-tr-sm inline-block` 
+                          : `w-full py-2 bg-transparent` 
                     }`}>
+                        
                         {msg.images && msg.images.length > 0 && (
-                          <div className="flex gap-2 mb-3">
+                          <div className="flex gap-2 mb-4">
                              {msg.images.map((img, idx) => (
-                               <img key={idx} src={img} className="h-32 rounded-lg border border-white/20 object-cover" alt="upload" />
+                               <img key={idx} src={img} className="h-40 rounded-xl border border-white/20 object-cover shadow-sm" alt="upload" />
                              ))}
                           </div>
                         )}
 
                         {msg.role === 'assistant' 
                            ? (
-                             <>
+                             <div className="w-full"> {/* 保证子组件也能 100% 伸展 */}
                                <AIResponseRenderer content={msg.content} theme={theme} t={t} />
                                {i === messages.length - 1 && isThinking && (
-                                 <span className={`inline-block w-1.5 h-4 ml-1 align-middle ${theme.accentBg} animate-pulse`}/>
+                                 <span className={`inline-block w-2 h-5 ml-1 align-middle ${theme.accentBg} animate-pulse`}/>
                                )}
-                             </>
+                             </div>
                            )
-                           : <div className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</div>
+                           : <div className="text-[15px] leading-relaxed whitespace-pre-wrap">{msg.content}</div>
                         }
                     </div>
                  </div>
