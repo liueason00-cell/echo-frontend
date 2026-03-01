@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Image as ImageIcon, Sparkles, User, Zap, LayoutDashboard, Target, Plus, LogOut, BrainCircuit, ChevronRight, Menu, X, Trash2, Palette, UploadCloud, Globe, MapPin, CheckCircle2, Gift, Crown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import LegalFooter from './LegalText'; 
