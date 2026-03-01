@@ -1,41 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Send, Image as ImageIcon, Sparkles, User, Zap, LayoutDashboard, Target, Plus, LogOut, BrainCircuit, ChevronRight, Menu, X, Trash2, Palette, UploadCloud, Globe, MapPin, CheckCircle2, Gift, Crown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import LegalFooter from './LegalText'; 
-import { Send, Image as ImageIcon, Sparkles, User, Zap, LayoutDashboard, Target, Plus, LogOut, BrainCircuit, ChevronRight, Menu, X, Trash2, Palette, UploadCloud, Globe, MapPin, CheckCircle2, Gift, Crown, Copy, Check } from 'lucide-react'; // 新增了 Copy 和 Check
 // 🔥 引入 Firebase
 import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
 import { auth, googleProvider } from './firebaseConfig';
 
-// ==============================================================================
-// 🌟 通用话术复制按钮组件
-// ==============================================================================
-const CopyButton = ({ text, theme }) => {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    if (!text) return;
-    // 确保把后端的字面量 \n 转换为真实的换行符
-    const formattedText = text.replace(/\\n/g, '\n');
-    navigator.clipboard.writeText(formattedText);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000); // 2秒后恢复原状
-  };
-
-  return (
-    <button 
-      onClick={handleCopy} 
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all shadow-sm active:scale-95 z-10 ${
-        copied 
-          ? 'bg-emerald-500 border-emerald-500 text-white' 
-          : `bg-white ${theme.border} ${theme.textSub} hover:${theme.textMain} hover:bg-slate-50`
-      }`}
-    >
-      {copied ? <Check size={14} /> : <Copy size={14} />}
-      {copied ? '已复制' : '一键复制'}
-    </button>
-  );
-};
 // ==============================================================================
 // 0. 🌍 国际化字典 (Translation Dictionary)
 // ==============================================================================
@@ -390,7 +361,6 @@ const AIResponseRenderer = ({ content, theme, t }) => {
     .trim();
 
   // 1️⃣ Quick Mode JSON
-  // 1️⃣ Quick Mode JSON
   if (cleanContent.startsWith('{') && cleanContent.includes('"replies"')) {
     try {
       const data = JSON.parse(cleanContent);
@@ -402,19 +372,12 @@ const AIResponseRenderer = ({ content, theme, t }) => {
             </h4>
             <div className="grid gap-4">
               {data.replies.map((reply, idx) => (
-                <div key={idx} className={`${theme.card} p-5 rounded-xl border ${theme.border} hover:shadow-md transition-shadow relative group`}>
-                  
-                  {/* 🌟 顶部栏：标签 + 一键复制按钮 */}
-                  <div className="flex justify-between items-start mb-2">
-                    <div className={`text-xs font-bold ${theme.accent} uppercase tracking-widest opacity-80 mt-1`}>
-                      {reply.type}
-                    </div>
-                    {/* 调用复制组件 */}
-                    {reply.copy_text && <CopyButton text={reply.copy_text} theme={theme} />}
+                <div key={idx} className={`${theme.card} p-5 rounded-xl border ${theme.border} hover:shadow-md transition-shadow`}>
+                  <div className={`text-xs font-bold ${theme.accent} mb-2 uppercase tracking-widest opacity-80`}>
+                    {reply.type}
                   </div>
-
                   <div className={`${theme.textMain} text-[15px] md:text-base font-medium leading-[1.8]`}>
-                    {reply.content}
+                    "{reply.content}"
                   </div>
                 </div>
               ))}
@@ -468,34 +431,11 @@ const AIResponseRenderer = ({ content, theme, t }) => {
 
             {action && (
               <div className={`${theme.card} p-6 md:p-8 rounded-2xl relative overflow-hidden shadow-sm`}>
-                <h4 className={`${theme.textMain} text-sm font-bold tracking-widest mb-4 flex items-center gap-2 uppercase`}>
+                <h4 className={`${theme.textMain} text-sm font-bold tracking-widest mb-2 flex items-center gap-2 uppercase`}>
                   <Zap size={16} className={theme.accent} fill="currentColor" /> {t.aiTitles.strategy}
                 </h4>
-                
                 <div className={`${theme.textMain} ${premiumMarkdownStyles}`}>
-                  {/* 🌟 利用正则按 Option 切割，并提取一键复制的内容 */}
-                  {action.split(/(?=### 👉 Option)/).map((part, index) => {
-                    if (!part.trim()) return null;
-                    
-                    // 提取 📋 **一键复制：** 后面到 💡 点评之前的内容
-                    const copyMatch = part.match(/📋 \*\*一键复制：\*\*\n*([\s\S]*?)(?=\n*> \*\*💡 点评|$)/);
-                    const copyText = copyMatch ? copyMatch[1].trim() : null;
-
-                    // 把原文本里的复制提示隐藏掉，用我们漂亮的 UI 按钮代替
-                    const displayPart = part.replace(/📋 \*\*一键复制：\*\*\n*[\s\S]*?(?=\n*> \*\*💡 点评|$)/, '');
-
-                    return (
-                      <div key={index} className="relative mb-8 last:mb-0 pb-6 border-b last:border-0 border-slate-100">
-                        {/* 如果提取到了复制文本，在右上角渲染复制按钮 */}
-                        {copyText && (
-                          <div className="absolute right-0 top-0 mt-2">
-                            <CopyButton text={copyText} theme={theme} />
-                          </div>
-                        )}
-                        <ReactMarkdown>{displayPart}</ReactMarkdown>
-                      </div>
-                    );
-                  })}
+                  <ReactMarkdown>{action}</ReactMarkdown>
                 </div>
               </div>
             )}
